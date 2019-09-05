@@ -168,7 +168,7 @@ class Build : NukeBuild
                   }
                 
                   tag = $"{branch}-{buildNumber}";
-                  if (Travis.Instance.Branch.ToLower() == "master")
+                  if (AppVeyor.Instance.RepositoryBranch.ToLower() == "master")
                   {
 
                       tag = "latest";
@@ -186,7 +186,7 @@ class Build : NukeBuild
                       branch = $"Pull-{pullId}";
                   }
                   tag = $"{branch}-{buildNumber}";
-                  if (Travis.Instance.Branch.ToLower() == "master")
+                  if (TeamServices.Instance.SourceBranchName.ToLower() == "master")
                   {
 
                       tag = "latest";
