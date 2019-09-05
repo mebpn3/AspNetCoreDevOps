@@ -10,8 +10,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Docker;
-using System.IO;
-using Nuke.Common.Tooling;
+using Nuke.Common.BuildServers;
 
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
@@ -23,7 +22,7 @@ class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public static int Main() => Execute<Build>(x => x.Test);
+    public static int Main() => Execute<Build>(x => x.LogoutFromDockerHub);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -39,11 +38,11 @@ class Build : NukeBuild
     AbsolutePath DockerFilePath => RootDirectory / "dockerfile";
 
     string tag = "";
-    bool isMaster = false;
-
-    //[Parameter("Github access token for packages")]
-    //readonly string GitHubAccessToken;
-    string repo = "docker.pkg.github.com/iambipinpaul/dairy/dairy";
+    string buildNumber = "";
+    string branch = "";
+    [Parameter("Github access token for packages")]
+    readonly string GitHubAccessToken;
+    string repo = "docker.pkg.github.com/iambipinpaul/aspnetcoredevops/aspnetcoredevops";
     string user = "iambipinpaul";
 
     Target Clean => _ => _
@@ -73,38 +72,39 @@ class Build : NukeBuild
         });
 
     Target CheckDockerVersion => _ => _
-    // .DependsOn(CheckBranch)
+      .DependsOn(CheckBranch)
         .Executes(() =>
         {
             DockerTasks.DockerVersion();
         });
 
-    //Target BuildDockerImage => _ => _
-    //    .DependsOn(LoginIntoDockerHub)
-    //    .DependsOn(DetermineTag)
-    //    .Executes(() =>
-    //    {
+    Target BuildDockerImage => _ => _
+        .DependsOn(LoginIntoDockerHub)
+        .DependsOn(DetermineTag)
+        .DependsOn(Test)
+        .Executes(() =>
+        {
 
-    //        DockerTasks.DockerBuild(b =>
-    //       b.SetFile(DockerFilePath.ToString())
-    //           .SetPath(".")
-    //           .SetTag($"{repo}:{tag}")
-    //   );
-    //    });
+            DockerTasks.DockerBuild(b =>
+           b.SetFile(DockerFilePath.ToString())
+            .SetPath(".")
+           .SetTag($"{repo}:{tag}")
+       );
+        });
 
-    //Target LoginIntoDockerHub => _ => _
-    //    .DependsOn(CheckDockerVersion)
-    //    .Executes(() =>
-    //    {
-    //        DockerTasks.DockerLogin(l => l
-    //        .SetServer("docker.pkg.github.com")
-    //        .SetUsername(user)
-    //            .SetPassword(GitHubAccessToken)
+    Target LoginIntoDockerHub => _ => _
+        .DependsOn(CheckDockerVersion)
+        .Executes(() =>
+        {
+            DockerTasks.DockerLogin(l => l
+            .SetServer("docker.pkg.github.com")
+            .SetUsername(user)
+                .SetPassword(GitHubAccessToken)
 
-    //        );
-    //    });
+            );
+        });
 
-    Target ComposeDocuer => _ => _
+    Target StartPosgreSql => _ => _
       .DependsOn(CheckDockerVersion)
       .Executes(() =>
       {
@@ -115,65 +115,99 @@ class Build : NukeBuild
           .SetPublish("1234:5432")
           .SetEnv("POSTGRES_USER=admin", "POSTGRES_PASSWORD=1q2w3e", "POSTGRES_DB=travisdb")
           .SetImage("postgres")
-          //   .SetExpose("1234:5432")
-          //.SetExpose("127.0.0.1:1234:5432/tcp")
-
           );
       });
 
 
     Target Test => _ => _
        .DependsOn(Compile)
-       .DependsOn(ComposeDocuer)
+       .DependsOn(StartPosgreSql)
        .Executes(() =>
        {
 
            DotNetTest(l => l.SetProjectFile(TestsProject));
        });
 
-    //Target DetermineTag => _ => _
-    //  .Executes(() =>
-    //  {
-    //      isMaster = GitRepository.Branch.Equals("master") || GitRepository.Branch.Equals("origin/master");
-    //      if (isMaster)
-    //      {
-    //          tag = "latest";
-    //      }
-    //      else
-    //      {
-    //          if (GitRepository.Branch.Equals("dev") || GitRepository.Branch.Equals("origin/dev"))
-    //          {
-    //              tag = $"dev";
-    //          }
-    //          if (GitRepository.Branch.Equals("multitenancy") || GitRepository.Branch.Equals("origin/multitenancy"))
-    //          {
-    //              tag = $"multitenancy";
-    //          }
-    //      }
-    //  });
+    Target DetermineTag => _ => _
+      .Executes(() =>
+      {
+          if (IsServerBuild)
+          {
+              if (Travis.Instance != null)
+              {
+                  branch = Travis.Instance.Branch.ToString();
+                  buildNumber = Travis.Instance.BuildNumber.ToString();
+                  var pullId = Travis.Instance.PullRequest;
+                  if (pullId.ToLower() != "false")
+                  {
+                      branch = $"Pull-{pullId}";
+                  }
+                  tag = $"{branch}-{buildNumber}";
+                  if (Travis.Instance.Branch.ToLower() == "master")
+                  {
 
-    //Target PushDockerImage => _ => _
-    //    .DependsOn(BuildDockerImage)
-    //    .Executes(() =>
-    //    {
-    //        DockerTasks.DockerPush(p =>
-    //            p.SetName($"{repo}"));
-    //    });
+                      tag = "latest";
+                  }
+              }
+              if (AppVeyor.Instance != null)
+              {
+                  branch = AppVeyor.Instance.RepositoryBranch.ToString();
+                  buildNumber = AppVeyor.Instance.BuildNumber.ToString();
+                  var pullId = AppVeyor.Instance.PullRequestNumber.ToString();
+                  if (pullId.ToLower() != "0")
+                  {
+                      branch = $"Pull-{pullId}";
+                  }
+                  tag = $"{branch}-{buildNumber}";
+                  if (Travis.Instance.Branch.ToLower() == "master")
+                  {
 
-    //Target LogoutFromDockerHub => _ => _
-    //    .DependsOn(PushDockerImage)
-    //    .Executes(() =>
-    //    {
-    //        DockerTasks.DockerLogout(l => l
-    //       .SetServer("docker.pkg.github.com")
-    //       );
+                      tag = "latest";
+                  }
 
-    //    });
-    //Target CheckBranch => _ => _
-    //   .Executes(() =>
-    //   {
-    //       Console.WriteLine(GitRepository.Branch);
-    //   });
+              }
+
+              if (TeamServices.Instance != null)
+              {
+                  branch = TeamServices.Instance.SourceBranchName.ToString();
+                  buildNumber = TeamServices.Instance.BuildNumber.ToString();
+                  var pullId = TeamServices.Instance.PullRequestId.ToString();
+                  if (pullId.ToLower() != "null")
+                  {
+                      branch = $"Pull-{pullId}";
+                  }
+                  tag = $"{branch}-{buildNumber}";
+                  if (Travis.Instance.Branch.ToLower() == "master")
+                  {
+
+                      tag = "latest";
+                  }
+              }
+          }        
+      });
+
+    Target PushDockerImage => _ => _
+        .DependsOn(BuildDockerImage)
+        .Executes(() =>
+        {
+            DockerTasks.DockerPush(p =>
+                p.SetName($"{repo}:{tag}"));
+        });
+
+    Target LogoutFromDockerHub => _ => _
+        .DependsOn(PushDockerImage)
+        .Executes(() =>
+        {
+            DockerTasks.DockerLogout(l => l
+           .SetServer("docker.pkg.github.com")
+           );
+
+        });
+    Target CheckBranch => _ => _
+       .Executes(() =>
+       {
+           Console.WriteLine(GitRepository.Branch);
+       });
 
 
 }

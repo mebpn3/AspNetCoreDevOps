@@ -9,4 +9,4 @@ services:
 script:
   - dotnet tool install -g Cake.Tool 
   - export PATH=$HOME/.dotnet/tools:$PATH
-  - dotnet run  --project ./build/_build.csproj 
+  - dotnet run  --project ./build/_build.csproj -GitHubAccessToken $GITHUB_ACCESS_TOKEN
