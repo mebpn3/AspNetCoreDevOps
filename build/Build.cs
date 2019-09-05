@@ -109,12 +109,15 @@ class Build : NukeBuild
       .Executes(() =>
       {
           DockerTasks.DockerRun(l =>
-          l.SetImage("postgres")
-          .SetName("travis_db")
-          .SetEnv("POSTGRES_USER=admin", "POSTGRES_PASSWORD=1q2w3e", "POSTGRES_DB=travisdb")
-       //   .SetExpose("1234:5432")
-          .SetExpose("127.0.0.1:1234:5432/tcp")
+          l
           .SetDetach(true)
+          .SetName("travis_db")
+          .SetExpose("1234:5432")
+          .SetEnv("POSTGRES_USER=admin", "POSTGRES_PASSWORD=1q2w3e", "POSTGRES_DB=travisdb")
+          .SetImage("postgres")
+          //   .SetExpose("1234:5432")
+          //.SetExpose("127.0.0.1:1234:5432/tcp")
+
           );
       });
 
