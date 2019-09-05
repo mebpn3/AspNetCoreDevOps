@@ -17,5 +17,5 @@ install:
 before_build:
   -  dotnet tool install -g Cake.Tool
 build_script:
-  -  dotnet run  --project ./build/_build.csproj -GitHubAccessToken $(GITHUB_ACCESS_TOKEN)
+  -  dotnet run  --project ./build/_build.csproj -GitHubAccessToken $GITHUB_ACCESS_TOKEN
 deploy: off
