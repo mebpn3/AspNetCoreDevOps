@@ -135,30 +135,30 @@ class Build : NukeBuild
           {
               if (Travis.Instance != null)
               {
-                  branch = Travis.Instance.Branch.ToString();
+                  branch ="travis-" + Travis.Instance.Branch.ToString();
                   buildNumber = Travis.Instance.BuildNumber.ToString();
                   var pullId = Travis.Instance.PullRequest;
                   if (pullId.ToLower() != "false")
                   {
-                      branch = $"Pull-{pullId}";
+                      branch = $"travis-Pull-{pullId}";
                   }
                   tag = $"{branch}-{buildNumber}";
                   if (Travis.Instance.Branch.ToLower() == "master")
                   {
 
-                      tag = "latest";
+                      tag = "travis-latest";
                   }
               }
               if (AppVeyor.Instance != null)
               {
-                  branch = AppVeyor.Instance.RepositoryBranch.ToString();
+                  branch = "appveyor-"+AppVeyor.Instance.RepositoryBranch.ToString();
                   buildNumber = AppVeyor.Instance.BuildNumber.ToString();
                   try
                   {
                       var pullId = AppVeyor.Instance.PullRequestNumber.ToString();
                       if (pullId.ToLower() != "0")
                       {
-                          branch = $"Pull-{pullId}";
+                          branch = $"appveyor-Pull-{pullId}";
                       }
                   }
                   catch (Exception)
@@ -171,25 +171,25 @@ class Build : NukeBuild
                   if (AppVeyor.Instance.RepositoryBranch.ToLower() == "master")
                   {
 
-                      tag = "latest";
+                      tag = "appveyor-latest";
                   }
 
               }
 
               if (TeamServices.Instance != null)
               {
-                  branch = TeamServices.Instance.SourceBranchName.ToString();
+                  branch = "azuredevops-"+TeamServices.Instance.SourceBranchName.ToString();
                   buildNumber = TeamServices.Instance.BuildNumber.ToString();
                   var pullId = TeamServices.Instance.PullRequestId.ToString();
                   if (pullId.ToLower() != "null")
                   {
-                      branch = $"Pull-{pullId}";
+                      branch = $"azuredevops-Pull-{pullId}";
                   }
                   tag = $"{branch}-{buildNumber}";
                   if (TeamServices.Instance.SourceBranchName.ToLower() == "master")
                   {
 
-                      tag = "latest";
+                      tag = "azuredevops-latest";
                   }
               }
           }        
