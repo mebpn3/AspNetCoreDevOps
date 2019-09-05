@@ -8,4 +8,4 @@ steps:
        version: '2.2.100' # replace this value with the version that you need for your project
   - script: |
        dotnet tool install -g Cake.Tool
-       dotnet cake build.cake
+        dotnet run  --project ./build/_build.csproj -GitHubAccessToken $(GITHUB_ACCESS_TOKEN)
