@@ -153,11 +153,20 @@ class Build : NukeBuild
               {
                   branch = AppVeyor.Instance.RepositoryBranch.ToString();
                   buildNumber = AppVeyor.Instance.BuildNumber.ToString();
-                  var pullId = AppVeyor.Instance.PullRequestNumber.ToString();
-                  if (pullId.ToLower() != "0")
+                  try
                   {
-                      branch = $"Pull-{pullId}";
+                      var pullId = AppVeyor.Instance.PullRequestNumber.ToString();
+                      if (pullId.ToLower() != "0")
+                      {
+                          branch = $"Pull-{pullId}";
+                      }
                   }
+                  catch (Exception)
+                  {
+
+                    //  throw;
+                  }
+                
                   tag = $"{branch}-{buildNumber}";
                   if (Travis.Instance.Branch.ToLower() == "master")
                   {
