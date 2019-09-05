@@ -112,7 +112,8 @@ class Build : NukeBuild
           l.SetImage("postgres")
           .SetName("travis_db")
           .SetEnv("POSTGRES_USER=admin", "POSTGRES_PASSWORD=1q2w3e", "POSTGRES_DB=travisdb")
-         // .SetExpose("1234 : 5432")
+       //   .SetExpose("1234:5432")
+          .SetExpose("127.0.0.1:1234:5432/tcp")
           .SetDetach(true)
           );
       });
