@@ -7,4 +7,4 @@ steps:
     inputs:
        version: '2.2.100' # replace this value with the version that you need for your project
   - script: |
-        dotnet run  --project ./build/_build.csproj -GitHubAccessToken $(GITHUB_ACCESS_TOKEN)
+        dotnet run  --project ./build/_build.csproj -GitHubAccessToken $(GithubAccessToken)
