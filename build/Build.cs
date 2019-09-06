@@ -172,6 +172,7 @@ class Build : NukeBuild
                   {
 
                       tag = "appveyor-latest";
+                     
                   }
 
               }
@@ -190,6 +191,17 @@ class Build : NukeBuild
                   {
 
                       tag = "azuredevops-latest";
+                  }
+              }
+
+              if (TeamServices.Instance==null && AppVeyor.Instance != null && Travis.Instance != null)
+              {
+                  branch = GitRepository.Branch;
+
+                  if (GitRepository.Branch.ToLower() == "master")
+                  {
+
+                      tag = "github-latest";
                   }
               }
           }        
